@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout version="0.1.0">
+	<default>
+		<reference name="head">
+			<block type="core/template" template="googlewebmastertools/head.phtml" name="googlewebmastertools"/>
+		</reference>
+	</default>
+</layout>

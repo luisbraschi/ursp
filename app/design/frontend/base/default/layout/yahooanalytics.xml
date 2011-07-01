@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<layout version="0.1.0">
+
+<!--
+Default layout, loads most of the pages
+-->
+
+    <default>
+        <!-- OrangeValley_YahooAnalytics -->
+        <reference name="before_body_end">
+            <block type="yahooanalytics/ya" name="yahoo_analytics" as="yahoo_analytics" />
+        </reference>
+    </default>
+
+	 <!-- <catalog_product_view>
+		<reference name="before_body_end">
+			<block type="core/template" name="product_tracking" as="product_tracking" after="yahoo_analytics" template="yahooanalytics/productview.phtml" />
+		 </reference>
+	</catalog_product_view>-->
+</layout>

@@ -1,0 +1,209 @@
+var widgetTools={getDivHtml:function(id,html){if(!html)html='';return'<div id="'+id+'">'+html+'</div>';},onAjaxSuccess:function(transport){if(transport.responseText.isJSON()){var response=transport.responseText.evalJSON()
+if(response.error){throw response;}else if(response.ajaxExpired&&response.ajaxRedirect){setLocation(response.ajaxRedirect);}}},openDialog:function(widgetUrl){if($('widget_window')&&typeof(Windows)!='undefined'){Windows.focus('widget_window');return;}
+this.dialogWindow=Dialog.info(null,{draggable:true,resizable:false,closable:true,className:'magento',windowClassName:"popup-window",title:'Insert Widget',top:50,width:950,zIndex:1000,recenterAuto:false,hideEffect:Element.hide,showEffect:Element.show,id:'widget_window',onClose:this.closeDialog.bind(this)});new Ajax.Updater('modal_dialog_message',widgetUrl,{evalScripts:true});},closeDialog:function(window){if(!window){window=this.dialogWindow;}
+if(window){WindowUtilities._showSelect();window.close();}}}
+var WysiwygWidget={};WysiwygWidget.Widget=Class.create();WysiwygWidget.Widget.prototype={initialize:function(formEl,widgetEl,widgetOptionsEl,optionsSourceUrl,widgetTargetId){$(formEl).insert({bottom:widgetTools.getDivHtml(widgetOptionsEl)});this.formEl=formEl;this.widgetEl=$(widgetEl);this.widgetOptionsEl=$(widgetOptionsEl);this.optionsUrl=optionsSourceUrl;this.optionValues=new Hash({});this.widgetTargetId=widgetTargetId;Event.observe(this.widgetEl,"change",this.loadOptions.bind(this));this.initOptionValues();},getOptionsContainerId:function(){return this.widgetOptionsEl.id+'_'+this.widgetEl.value.gsub(/\//,'_');},switchOptionsContainer:function(containerId){$$('#'+this.widgetOptionsEl.id+' div[id^='+this.widgetOptionsEl.id+']').each(function(e){this.disableOptionsContainer(e.id);}.bind(this));if(containerId!=undefined){this.enableOptionsContainer(containerId);}
+this._showWidgetDescription();},enableOptionsContainer:function(containerId){$$('#'+containerId+' .widget-option').each(function(e){e.removeClassName('skip-submit');if(e.hasClassName('obligatory')){e.removeClassName('obligatory');e.addClassName('required-entry');}});$(containerId).removeClassName('no-display');},disableOptionsContainer:function(containerId){if($(containerId).hasClassName('no-display')){return;}
+$$('#'+containerId+' .widget-option').each(function(e){if(!e.hasClassName('skip-submit')){e.addClassName('skip-submit');}
+if(e.hasClassName('required-entry')){e.removeClassName('required-entry');e.addClassName('obligatory');}});$(containerId).addClassName('no-display');},initOptionValues:function(){if(!this.wysiwygExists()){return false;}
+var e=this.getWysiwygNode();if(e!=undefined&&e.id){var widgetCode=Base64.idDecode(e.id);if(widgetCode.indexOf('{{widget')!=-1){this.optionValues=new Hash({});widgetCode.gsub(/([a-z0-9\_]+)\s*\=\s*[\"]{1}([^\"]+)[\"]{1}/i,function(match){if(match[1]=='type'){this.widgetEl.value=match[2];}else{this.optionValues.set(match[1],match[2]);}}.bind(this));this.loadOptions();}}},loadOptions:function(){if(!this.widgetEl.value){this.switchOptionsContainer();return;}
+var optionsContainerId=this.getOptionsContainerId();if($(optionsContainerId)!=undefined){this.switchOptionsContainer(optionsContainerId);return;}
+this._showWidgetDescription();var params={widget_type:this.widgetEl.value,values:this.optionValues};new Ajax.Request(this.optionsUrl,{parameters:{widget:Object.toJSON(params)},onSuccess:function(transport){try{widgetTools.onAjaxSuccess(transport);this.switchOptionsContainer();if($(optionsContainerId)==undefined){this.widgetOptionsEl.insert({bottom:widgetTools.getDivHtml(optionsContainerId,transport.responseText)});}else{this.switchOptionsContainer(optionsContainerId);}}catch(e){alert(e.message);}}.bind(this)});},_showWidgetDescription:function(){var noteCnt=this.widgetEl.next().down('small');var descrCnt=$('widget-description-'+this.widgetEl.selectedIndex);if(noteCnt!=undefined){var description=(descrCnt!=undefined?descrCnt.innerHTML:'');noteCnt.update(descrCnt.innerHTML);}},insertWidget:function(){widgetOptionsForm=new varienForm(this.formEl);if(widgetOptionsForm.validator&&widgetOptionsForm.validator.validate()||!widgetOptionsForm.validator){var formElements=[];var i=0;Form.getElements($(this.formEl)).each(function(e){if(!e.hasClassName('skip-submit')){formElements[i]=e;i++;}});var params=Form.serializeElements(formElements);if(!this.wysiwygExists()){params=params+'&as_is=1';}
+new Ajax.Request($(this.formEl).action,{parameters:params,onComplete:function(transport){try{widgetTools.onAjaxSuccess(transport);Windows.close("widget_window");this.updateContent(transport.responseText);}catch(e){alert(e.message);}}.bind(this)});}},updateContent:function(content){if(this.wysiwygExists()){this.getWysiwyg().execCommand("mceInsertContent",false,content);}else{var textarea=document.getElementById(this.widgetTargetId);updateElementAtCursor(textarea,content);varienGlobalEvents.fireEvent('tinymceChange');}},wysiwygExists:function(){return(typeof tinyMCE!='undefined')&&tinyMCE.get(this.widgetTargetId);},getWysiwyg:function(){return tinyMCE.activeEditor;},getWysiwygNode:function(){return tinyMCE.activeEditor.selection.getNode();}}
+WysiwygWidget.chooser=Class.create();WysiwygWidget.chooser.prototype={chooserId:null,chooserUrl:null,config:null,dialogWindow:null,dialogContent:null,overlayShowEffectOptions:null,overlayHideEffectOptions:null,initialize:function(chooserId,chooserUrl,config){this.chooserId=chooserId;this.chooserUrl=chooserUrl;this.config=config;},getResponseContainerId:function(){return'responseCnt'+this.chooserId;},getChooserControl:function(){return $(this.chooserId+'control');},getElement:function(){return $(this.chooserId+'value');},getElementLabel:function(){return $(this.chooserId+'label');},open:function(){$(this.getResponseContainerId()).show();},close:function(){$(this.getResponseContainerId()).hide();this.closeDialogWindow();},choose:function(event){if(this.dialogContent){this.openDialogWindow(this.dialogContent);return;}
+var responseContainerId=this.getResponseContainerId();new Ajax.Request(this.chooserUrl,{parameters:{element_value:this.getElementValue(),element_label:this.getElementLabelText()},onSuccess:function(transport){try{widgetTools.onAjaxSuccess(transport);this.dialogContent=widgetTools.getDivHtml(responseContainerId,transport.responseText);this.openDialogWindow(this.dialogContent);}catch(e){alert(e.message);}}.bind(this)});},openDialogWindow:function(content){this.overlayShowEffectOptions=Windows.overlayShowEffectOptions;this.overlayHideEffectOptions=Windows.overlayHideEffectOptions;Windows.overlayShowEffectOptions={duration:0};Windows.overlayHideEffectOptions={duration:0};this.dialogWindow=Dialog.info(content,{draggable:true,resizable:true,closable:true,className:"magento",windowClassName:"popup-window",title:this.config.buttons.open,top:50,width:950,height:500,zIndex:1000,recenterAuto:false,hideEffect:Element.hide,showEffect:Element.show,id:"widget-chooser",onClose:this.closeDialogWindow.bind(this)});content.evalScripts.bind(content).defer();},closeDialogWindow:function(dialogWindow){if(!dialogWindow){dialogWindow=this.dialogWindow;}
+if(dialogWindow){dialogWindow.close();Windows.overlayShowEffectOptions=this.overlayShowEffectOptions;Windows.overlayHideEffectOptions=this.overlayHideEffectOptions;}
+this.dialogWindow=null;},getElementValue:function(value){return this.getElement().value;},getElementLabelText:function(value){return this.getElementLabel().innerHTML;},setElementValue:function(value){this.getElement().value=value;},setElementLabel:function(value){this.getElementLabel().innerHTML=value;}};Flex={};Flex.currentID=0;Flex.uniqId=function(){return'flexMovieUID'+(++Flex.currentID);};Flex.checkFlashPlayerVersion=function(major,minor,revision){var version=Flex.getFlashPlayerVersion();if(version===false){return false;}
+var requestedVersion=Flex.transformVersionToFloat([major,minor,revision],5);var currentVersion=Flex.transformVersionToFloat(version,5);return requestedVersion<=currentVersion;};Flex._getFlashPlayerVersionAsActiveX=function(){var versions=[{'default':'7.0.0','code':'ShockwaveFlash.ShockwaveFlash.7','variable':true},{'default':'6.0.0','code':'ShockwaveFlash.ShockwaveFlash.6','variable':true,'acceess':true},{'default':'3.0.0','code':'ShockwaveFlash.ShockwaveFlash.3','variable':false},{'default':'2.0.0','code':'ShockwaveFlash.ShockwaveFlash','variable':false},];var detector=function(options){var activeXObject=new ActiveXObject(options.code);if(options.access&&options.variable){activeXObject.AllowScriptAccess='always';}
+if(options.variable){return activeXObject.GetVariable('$version');}
+return options['default'];}
+var version=false;for(var i=0,l=versions.length;i<l;i++){try{version=detector(versions[i]);return version;}catch(e){}}
+return false;};Flex.transformVersionToArray=function(version){if(!Object.isString(version)){return false;}
+var versions=version.match(/[\d]+/g);if(versions.length>3){return versions.slice(0,3);}else if(versions.length){return versions;}
+return false;};Flex.transformVersionToFloat=function(version,range){if(Object.isString(version)){version=Flex.transformVersionToArray(version)}
+if(Object.isArray(version)){var result=0;for(var i=0,l=version.length;i<l;i++){result+=parseFloat(version[i])/Math.pow(10,range*i);}
+return result;}
+return false;};Flex.getFlashPlayerVersion=function(){if(Flex.flashPlayerVersion){return Flex.flashPlayerVersion;}
+var version=false;if(navigator.plugins!=null&&navigator.plugins.length>0){if(navigator.mimeTypes&&navigator.mimeTypes.length>0){if(navigator.mimeTypes['application/x-shockwave-flash']&&!navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin){return false;}}
+var flashPlugin=navigator.plugins['Shockwave Flash']||navigator.plugins['Shockwave Flash 2.0'];version=Flex.transformVersionToArray(flashPlugin.description);}else{version=Flex.transformVersionToArray(Flex._getFlashPlayerVersionAsActiveX());}
+Flex.flashPlayerVersion=version;return version;};Flex.Object=Class.create({initialize:function(config){this.isIE=Prototype.Browser.IE;this.isWin=(navigator.appVersion.toLowerCase().indexOf("win")!=-1)?true:false;this.attributes={quality:"high",pluginspage:"http://www.adobe.com/go/getflashplayer",type:"application/x-shockwave-flash",allowScriptAccess:"always",classid:"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"};this.bridgeName='';this.bridge=false;this.setAttributes(config);this.applied=false;var myTemplatesPattern=/(^|.|\r|\n)(\{(.*?)\})/;if(this.detectFlashVersion(9,0,28)){if(this.isIE){this.template=new Template('<object {objectAttributes}><param name="allowFullScreen" value="true"/>{objectParameters}</object>',myTemplatesPattern)}else{this.template=new Template('<embed {embedAttributes} allowfullscreen="true" />',myTemplatesPattern);}}else{this.template=new Template('This content requires the Adobe Flash Player. '
++' <a href=http://www.adobe.com/go/getflash/>Get Flash</a>',myTemplatesPattern);}
+this.parametersTemplate=new Template('<param name="{name}" value="{value}" />',myTemplatesPattern);this.attributesTemplate=new Template(' {name}="{value}" ',myTemplatesPattern);},setAttribute:function(name,value){if(!this.applied){this.attributes[name]=value;}},getAttribute:function(name){return this.attributes[name];},setAttributes:function(attributesList){$H(attributesList).each(function(pair){this.setAttribute(pair.key,pair.value);}.bind(this));},getAttributes:function(){return this.attributes;},apply:function(container){if(!this.applied){this.setAttribute("id",Flex.uniqId());this.preInitBridge();var readyHTML=this.template.evaluate(this.generateTemplateValues());$(container).update(readyHTML);}
+this.applied=true;},applyWrite:function(){if(!this.applied){this.setAttribute("id",Flex.uniqId());this.preInitBridge();var readyHTML=this.template.evaluate(this.generateTemplateValues());document.write(readyHTML);}
+this.applied=true;},preInitBridge:function(){this.bridgeName=this.getAttribute('id')+'bridge';var flashVars=this.getAttribute('flashVars')||this.getAttribute('flashvars')||'';if(flashVars!=''){flashVars+='&';}
+flashVars+='bridgeName='+this.bridgeName;this.setAttribute('flashVars',flashVars);var scopeObj=this;FABridge.addInitializationCallback(this.bridgeName,function(){scopeObj.bridge=this.root();scopeObj.initBridge();});},initBridge:function(){if(this.onBridgeInit){this.onBridgeInit(this.getBridge());}},getBridge:function(){return this.bridge;},generateTemplateValues:function(){var attributesMap={embed:{'movie':'src','id':'name','flashvars':'flashVars','classid':false,'codebase':false},object:{'pluginspage':false,'src':'movie','flashvars':'flashVars','type':false,'inline':['type','classid','codebase','id','width','height','align','vspace','hspace','class','title','accesskey','name','tabindex']}};var embedAttributes={};var objectAttributes={};var parameters={};$H(this.attributes).each(function(pair){var attributeName=pair.key.toLowerCase();this.attributes[pair.key]=this.escapeAttributes(pair.value);var attributeNameInObject=(attributesMap.object[attributeName]?attributesMap.object[attributeName]:attributeName);var attributeNameInEmbed=(attributesMap.embed[attributeName]?attributesMap.embed[attributeName]:attributeName);if(attributesMap.object[attributeName]!==false){if(attributesMap.object.inline.indexOf(attributeNameInObject)!==-1){objectAttributes[attributeNameInObject]=this.attributes[pair.key];}else{parameters[attributeNameInObject]=this.attributes[pair.key];}}
+if(attributesMap.embed[attributeName]!==false){embedAttributes[attributeNameInEmbed]=this.attributes[pair.key];}}.bind(this));var result={objectAttributes:'',objectParameters:'',embedAttributes:''};$H(objectAttributes).each(function(pair){result.objectAttributes+=this.attributesTemplate.evaluate({name:pair.key,value:pair.value});}.bind(this));$H(embedAttributes).each(function(pair){result.embedAttributes+=this.attributesTemplate.evaluate({name:pair.key,value:pair.value});}.bind(this));$H(parameters).each(function(pair){result.objectParameters+=this.parametersTemplate.evaluate({name:pair.key,value:pair.value});}.bind(this));return result;},escapeAttributes:function(value){if(typeof value=='string'){return value.escapeHTML();}else{return value;}},detectFlashVersion:function(major,minor,revision){return Flex.checkFlashPlayerVersion(major,minor,revision);}});;function FABridge(target,bridgeName)
+{this.target=target;this.remoteTypeCache={};this.remoteInstanceCache={};this.remoteFunctionCache={};this.localFunctionCache={};this.bridgeID=FABridge.nextBridgeID++;this.name=bridgeName;this.nextLocalFuncID=0;FABridge.instances[this.name]=this;FABridge.idMap[this.bridgeID]=this;return this;}
+FABridge.TYPE_ASINSTANCE=1;FABridge.TYPE_ASFUNCTION=2;FABridge.TYPE_JSFUNCTION=3;FABridge.TYPE_ANONYMOUS=4;FABridge.initCallbacks={};FABridge.userTypes={};FABridge.addToUserTypes=function()
+{for(var i=0;i<arguments.length;i++)
+{FABridge.userTypes[arguments[i]]={'typeName':arguments[i],'enriched':false};}}
+FABridge.argsToArray=function(args)
+{var result=[];for(var i=0;i<args.length;i++)
+{result[i]=args[i];}
+return result;}
+function instanceFactory(objID)
+{this.fb_instance_id=objID;return this;}
+function FABridge__invokeJSFunction(args)
+{var funcID=args[0];var throughArgs=args.concat();throughArgs.shift();var bridge=FABridge.extractBridgeFromID(funcID);return bridge.invokeLocalFunction(funcID,throughArgs);}
+FABridge.addInitializationCallback=function(bridgeName,callback)
+{var inst=FABridge.instances[bridgeName];if(inst!=undefined)
+{callback.call(inst);return;}
+var callbackList=FABridge.initCallbacks[bridgeName];if(callbackList==null)
+{FABridge.initCallbacks[bridgeName]=callbackList=[];}
+callbackList.push(callback);}
+function FABridge__bridgeInitialized(bridgeName){var objects=document.getElementsByTagName("object");var ol=objects.length;var activeObjects=[];if(ol>0){for(var i=0;i<ol;i++){if(typeof objects[i].SetVariable!="undefined"){activeObjects[activeObjects.length]=objects[i];}}}
+var embeds=document.getElementsByTagName("embed");var el=embeds.length;var activeEmbeds=[];if(el>0){for(var j=0;j<el;j++){if(typeof embeds[j].SetVariable!="undefined"){activeEmbeds[activeEmbeds.length]=embeds[j];}}}
+var aol=activeObjects.length;var ael=activeEmbeds.length;var searchStr="bridgeName="+bridgeName;if((aol==1&&!ael)||(aol==1&&ael==1)){FABridge.attachBridge(activeObjects[0],bridgeName);}
+else if(ael==1&&!aol){FABridge.attachBridge(activeEmbeds[0],bridgeName);}
+else{var flash_found=false;if(aol>1){for(var k=0;k<aol;k++){var params=activeObjects[k].childNodes;for(var l=0;l<params.length;l++){var param=params[l];if(param.nodeType==1&&param.tagName.toLowerCase()=="param"&&param["name"].toLowerCase()=="flashvars"&&param["value"].indexOf(searchStr)>=0){FABridge.attachBridge(activeObjects[k],bridgeName);flash_found=true;break;}}
+if(flash_found){break;}}}
+if(!flash_found&&ael>1){for(var m=0;m<ael;m++){var flashVars=activeEmbeds[m].attributes.getNamedItem("flashVars").nodeValue;if(flashVars.indexOf(searchStr)>=0){FABridge.attachBridge(activeEmbeds[m],bridgeName);break;}}}}
+return true;}
+FABridge.nextBridgeID=0;FABridge.instances={};FABridge.idMap={};FABridge.refCount=0;FABridge.extractBridgeFromID=function(id)
+{var bridgeID=(id>>16);return FABridge.idMap[bridgeID];}
+FABridge.attachBridge=function(instance,bridgeName)
+{if(typeof FABridge[bridgeName]=='undefined'){FABridge[bridgeName]=new FABridge(instance,bridgeName);}
+var callbacks=FABridge.initCallbacks[bridgeName];if(callbacks==null)
+{return;}
+for(var i=0;i<callbacks.length;i++)
+{callbacks[i].call(FABridge[bridgeName]);}}
+FABridge.blockedMethods={toString:true,get:true,set:true,call:true};FABridge.prototype={root:function()
+{return this.deserialize(this.target.getRoot());},releaseASObjects:function()
+{return this.target.releaseASObjects();},releaseNamedASObject:function(value)
+{if(typeof(value)!="object")
+{return false;}
+else
+{var ret=this.target.releaseNamedASObject(value.fb_instance_id);return ret;}},create:function(className)
+{return this.deserialize(this.target.create(className));},makeID:function(token)
+{return(this.bridgeID<<16)+token;},getPropertyFromAS:function(objRef,propName)
+{if(FABridge.refCount>0)
+{throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.");}
+else
+{FABridge.refCount++;retVal=this.target.getPropFromAS(objRef,propName);retVal=this.handleError(retVal);FABridge.refCount--;return retVal;}},setPropertyInAS:function(objRef,propName,value)
+{if(FABridge.refCount>0)
+{throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.");}
+else
+{FABridge.refCount++;retVal=this.target.setPropInAS(objRef,propName,this.serialize(value));retVal=this.handleError(retVal);FABridge.refCount--;return retVal;}},callASFunction:function(funcID,args)
+{if(FABridge.refCount>0)
+{throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.");}
+else
+{FABridge.refCount++;retVal=this.target.invokeASFunction(funcID,this.serialize(args));retVal=this.handleError(retVal);FABridge.refCount--;return retVal;}},callASMethod:function(objID,funcName,args)
+{if(FABridge.refCount>0)
+{throw new Error("You are trying to call recursively into the Flash Player which is not allowed. In most cases the JavaScript setTimeout function, can be used as a workaround.");}
+else
+{FABridge.refCount++;args=this.serialize(args);retVal=this.target.invokeASMethod(objID,funcName,args);retVal=this.handleError(retVal);FABridge.refCount--;return retVal;}},invokeLocalFunction:function(funcID,args)
+{var result;var func=this.localFunctionCache[funcID];if(func!=undefined)
+{result=this.serialize(func.apply(null,this.deserialize(args)));}
+return result;},getTypeFromName:function(objTypeName)
+{return this.remoteTypeCache[objTypeName];},createProxy:function(objID,typeName)
+{var objType=this.getTypeFromName(typeName);instanceFactory.prototype=objType;var instance=new instanceFactory(objID);this.remoteInstanceCache[objID]=instance;return instance;},getProxy:function(objID)
+{return this.remoteInstanceCache[objID];},addTypeDataToCache:function(typeData)
+{newType=new ASProxy(this,typeData.name);var accessors=typeData.accessors;for(var i=0;i<accessors.length;i++)
+{this.addPropertyToType(newType,accessors[i]);}
+var methods=typeData.methods;for(var i=0;i<methods.length;i++)
+{if(FABridge.blockedMethods[methods[i]]==undefined)
+{this.addMethodToType(newType,methods[i]);}}
+this.remoteTypeCache[newType.typeName]=newType;return newType;},addPropertyToType:function(ty,propName)
+{var c=propName.charAt(0);var setterName;var getterName;if(c>="a"&&c<="z")
+{getterName="get"+c.toUpperCase()+propName.substr(1);setterName="set"+c.toUpperCase()+propName.substr(1);}
+else
+{getterName="get"+propName;setterName="set"+propName;}
+ty[setterName]=function(val)
+{this.bridge.setPropertyInAS(this.fb_instance_id,propName,val);}
+ty[getterName]=function()
+{return this.bridge.deserialize(this.bridge.getPropertyFromAS(this.fb_instance_id,propName));}},addMethodToType:function(ty,methodName)
+{ty[methodName]=function()
+{return this.bridge.deserialize(this.bridge.callASMethod(this.fb_instance_id,methodName,FABridge.argsToArray(arguments)));}},getFunctionProxy:function(funcID)
+{var bridge=this;if(this.remoteFunctionCache[funcID]==null)
+{this.remoteFunctionCache[funcID]=function()
+{bridge.callASFunction(funcID,FABridge.argsToArray(arguments));}}
+return this.remoteFunctionCache[funcID];},getFunctionID:function(func)
+{if(func.__bridge_id__==undefined)
+{func.__bridge_id__=this.makeID(this.nextLocalFuncID++);this.localFunctionCache[func.__bridge_id__]=func;}
+return func.__bridge_id__;},serialize:function(value)
+{var result={};var t=typeof(value);if(t=="number"||t=="string"||t=="boolean"||t==null||t==undefined)
+{result=value;}
+else if(value instanceof Array)
+{result=[];for(var i=0;i<value.length;i++)
+{result[i]=this.serialize(value[i]);}}
+else if(t=="function")
+{result.type=FABridge.TYPE_JSFUNCTION;result.value=this.getFunctionID(value);}
+else if(value instanceof ASProxy)
+{result.type=FABridge.TYPE_ASINSTANCE;result.value=value.fb_instance_id;}
+else
+{result.type=FABridge.TYPE_ANONYMOUS;result.value=value;}
+return result;},deserialize:function(packedValue)
+{var result;var t=typeof(packedValue);if(t=="number"||t=="string"||t=="boolean"||packedValue==null||packedValue==undefined)
+{result=this.handleError(packedValue);}
+else if(packedValue instanceof Array)
+{result=[];for(var i=0;i<packedValue.length;i++)
+{result[i]=this.deserialize(packedValue[i]);}}
+else if(t=="object")
+{for(var i=0;i<packedValue.newTypes.length;i++)
+{this.addTypeDataToCache(packedValue.newTypes[i]);}
+for(var aRefID in packedValue.newRefs)
+{this.createProxy(aRefID,packedValue.newRefs[aRefID]);}
+if(packedValue.type==FABridge.TYPE_PRIMITIVE)
+{result=packedValue.value;}
+else if(packedValue.type==FABridge.TYPE_ASFUNCTION)
+{result=this.getFunctionProxy(packedValue.value);}
+else if(packedValue.type==FABridge.TYPE_ASINSTANCE)
+{result=this.getProxy(packedValue.value);}
+else if(packedValue.type==FABridge.TYPE_ANONYMOUS)
+{result=packedValue.value;}}
+return result;},addRef:function(obj)
+{this.target.incRef(obj.fb_instance_id);},release:function(obj)
+{this.target.releaseRef(obj.fb_instance_id);},handleError:function(value)
+{if(typeof(value)=="string"&&value.indexOf("__FLASHERROR")==0)
+{var myErrorMessage=value.split("||");if(FABridge.refCount>0)
+{FABridge.refCount--;}
+throw new Error(myErrorMessage[1]);return value;}
+else
+{return value;}}};ASProxy=function(bridge,typeName)
+{this.bridge=bridge;this.typeName=typeName;return this;};ASProxy.prototype={get:function(propName)
+{return this.bridge.deserialize(this.bridge.getPropertyFromAS(this.fb_instance_id,propName));},set:function(propName,value)
+{this.bridge.setPropertyInAS(this.fb_instance_id,propName,value);},call:function(funcName,args)
+{this.bridge.callASMethod(this.fb_instance_id,funcName,args);},addRef:function(){this.bridge.addRef(this);},release:function(){this.bridge.release(this);}};;if(!window.Flex){alert('Flex library not loaded');}else{Flex.Uploader=Class.create();Flex.Uploader.prototype={flex:null,uploader:null,filters:null,containerId:null,flexContainerId:null,container:null,files:null,fileRowTemplate:null,fileProgressTemplate:null,templatesPattern:/(^|.|\r|\n)(\{\{(.*?)\}\})/,onFilesComplete:false,onFileProgress:true,onFileRemove:false,onContainerHideBefore:null,initialize:function(containerId,uploaderSrc,config){this.containerId=containerId;this.container=$(containerId);this.container.controller=this;this.config=config;this.flexContainerId=this.containerId+'-flash';Element.insert(this.containerId,{'before':'<div id="'+this.flexContainerId+'" class="flex" style="position:relative;float:right;"></div>'});flexWidth=230;if(this.config.width){flexWidth=this.config.width;}
+this.flex=new Flex.Object({left:100,top:300,width:flexWidth,height:20,src:uploaderSrc});this.fileRowTemplate=new Template(this.getInnerElement('template').innerHTML,this.templatesPattern);this.fileProgressTemplate=new Template(this.getInnerElement('template-progress').innerHTML,this.templatesPattern);this.flex.onBridgeInit=this.handleBridgeInit.bind(this);if(this.flex.detectFlashVersion(9,0,28)){this.flex.apply(this.flexContainerId);}else{this.getInnerElement('install-flash').show();}
+this.onContainerHideBefore=this.handleContainerHideBefore.bind(this);},getInnerElement:function(elementName){return $(this.containerId+'-'+elementName);},getFileId:function(file){var id;if(typeof file=='object'){id=file.id;}else{id=file;}
+return this.containerId+'-file-'+id;},getDeleteButton:function(file){return $(this.getFileId(file)+'-delete');},handleBridgeInit:function(){this.uploader=this.flex.getBridge().getUpload();if(this.config.filters){$H(this.config.filters).each(function(pair){this.uploader.addTypeFilter(pair.key,pair.value.label,pair.value.files);}.bind(this));delete(this.config.filters);this.uploader.setUseTypeFilter(true);}
+this.uploader.setConfig(this.config);this.uploader.addEventListener('select',this.handleSelect.bind(this));this.uploader.addEventListener('complete',this.handleComplete.bind(this));this.uploader.addEventListener('progress',this.handleProgress.bind(this));this.uploader.addEventListener('error',this.handleError.bind(this));this.uploader.addEventListener('removeall',this.handleRemoveAll.bind(this));},browse:function(){this.uploader.browse();},upload:function(){this.uploader.upload();this.files=this.uploader.getFilesInfo();this.updateFiles();},removeFile:function(id){this.uploader.removeFile(id);$(this.getFileId(id)).remove();if(this.onFileRemove){this.onFileRemove(id);}
+this.files=this.uploader.getFilesInfo();this.updateFiles();},removeAllFiles:function(){this.files.each(function(file){this.removeFile(file.id);}.bind(this));this.files=this.uploader.getFilesInfo();this.updateFiles();},handleSelect:function(event){this.files=event.getData().files;this.checkFileSize();this.updateFiles();this.getInnerElement('upload').show();if(this.onFileSelect){this.onFileSelect();}},handleProgress:function(event){var file=event.getData().file;this.updateFile(file);if(this.onFileProgress){this.onFileProgress(file);}},handleError:function(event){this.updateFile(event.getData().file);},handleComplete:function(event){this.files=event.getData().files;this.updateFiles();if(this.onFilesComplete){this.onFilesComplete(this.files);}},handleRemoveAll:function(event){this.files.each(function(file){$(this.getFileId(file.id)).remove();}.bind(this));if(this.onFileRemoveAll){this.onFileRemoveAll();}
+this.files=this.uploader.getFilesInfo();this.updateFiles();},handleRemove:function(event){this.files=this.uploader.getFilesInfo();this.updateFiles();},updateFiles:function(){this.files.each(function(file){this.updateFile(file);}.bind(this));},updateFile:function(file){if(!$(this.getFileId(file))){if(this.config.replace_browse_with_remove){$(this.containerId+'-new').show();$(this.containerId+'-new').innerHTML=this.fileRowTemplate.evaluate(this.getFileVars(file));$(this.containerId+'-old').hide();this.flex.getBridge().hideBrowseButton();}else{Element.insert(this.container,{bottom:this.fileRowTemplate.evaluate(this.getFileVars(file))});}}
+if(file.status=='full_complete'&&file.response.isJSON()){var response=file.response.evalJSON();if(typeof response=='object'){if(typeof response.cookie=='object'){var date=new Date();date.setTime(date.getTime()+(parseInt(response.cookie.lifetime)*1000));document.cookie=escape(response.cookie.name)+"="
++escape(response.cookie.value)
++"; expires="+date.toGMTString()
++(response.cookie.path.blank()?"":"; path="+response.cookie.path)
++(response.cookie.domain.blank()?"":"; domain="+response.cookie.domain);}
+if(typeof response.error!='undefined'&&response.error!=0){file.status='error';file.errorText=response.error;}}}
+if(file.status=='full_complete'&&!file.response.isJSON()){file.status='error';}
+var progress=$(this.getFileId(file)).getElementsByClassName('progress-text')[0];if((file.status=='progress')||(file.status=='complete')){$(this.getFileId(file)).addClassName('progress');$(this.getFileId(file)).removeClassName('new');$(this.getFileId(file)).removeClassName('error');if(file.progress&&file.progress.total){progress.update(this.fileProgressTemplate.evaluate(this.getFileProgressVars(file)));}else{progress.update('');}
+if(!this.config.replace_browse_with_remove){this.getDeleteButton(file).hide();}}else if(file.status=='error'){$(this.getFileId(file)).addClassName('error');$(this.getFileId(file)).removeClassName('progress');$(this.getFileId(file)).removeClassName('new');var errorText=file.errorText?file.errorText:this.errorText(file);if(this.config.replace_browse_with_remove){this.flex.getBridge().hideBrowseButton();}else{this.getDeleteButton(file).show();}
+progress.update(errorText);}else if(file.status=='full_complete'){$(this.getFileId(file)).addClassName('complete');$(this.getFileId(file)).removeClassName('progress');$(this.getFileId(file)).removeClassName('error');if(this.config.replace_browse_with_remove){this.flex.getBridge().hideRemoveButton();}
+progress.update(this.translate('Complete'));}},getDebugStr:function(obj){return Object.toJSON(obj).replace('&','&amp;').replace('>','&gt;').replace('<','&lt;');},getFileVars:function(file){return{id:this.getFileId(file),fileId:file.id,name:file.name,size:this.formatSize(file.size)};},getFileProgressVars:function(file){return{total:this.formatSize(file.progress.total),uploaded:this.formatSize(file.progress.loaded),percent:this.round((file.progress.loaded/file.progress.total)*100)};},formatSize:function(size){if(size>1024*1024*1024*1024){return this.round(size/(1024*1024*1024*1024))+' '+this.translate('Tb');}else if(size>1024*1024*1024){return this.round(size/(1024*1024*1024))+' '+this.translate('Gb');}else if(size>1024*1024){return this.round(size/(1024*1024))+' '+this.translate('Mb');}else if(size>1024){return this.round(size/(1024))+' '+this.translate('Kb');}
+return size+' '+this.translate('b');},round:function(number){return Math.round(number*100)/100;},checkFileSize:function(){newFiles=[];hasTooBigFiles=false;this.files.each(function(file){if(file.size>maxUploadFileSizeInBytes){hasTooBigFiles=true;this.uploader.removeFile(file.id)}else{newFiles.push(file)}}.bind(this));this.files=newFiles;if(hasTooBigFiles){alert(this.translate('Maximum allowed file size for upload is')+' '+maxUploadFileSize+".\n"+this.translate('Please check your server PHP settings.'));}},translate:function(text){try{if(Translator){return Translator.translate(text);}}
+catch(e){}
+return text;},errorText:function(file){var error='';switch(file.errorCode){case 1:error='File size should be more than 0 bytes';break;case 2:error='Upload HTTP Error';break;case 3:error='Upload I/O Error';break;case 4:error='Upload Security Error';break;case 5:error='SSL Error: Invalid or self-signed certificate';break;}
+if(error){return this.translate(error);}
+return error;},handleContainerHideBefore:function(container){if(container&&Element.descendantOf(this.container,container)&&!this.checkAllComplete()){if(!confirm('There are files that were selected but not uploaded yet. After switching to another tab your selections will be lost. Do you wish to continue ?')){return'cannotchange';}else{this.removeAllFiles();}}},checkAllComplete:function(){if(this.files){return!this.files.any(function(file){return(file.status!=='full_complete')});}
+return true;}}};MediabrowserUtility={openDialog:function(url,width,height,title){if($('browser_window')&&typeof(Windows)!='undefined'){Windows.focus('browser_window');return;}
+this.dialogWindow=Dialog.info(null,{closable:true,resizable:false,draggable:true,className:'magento',windowClassName:'popup-window',title:title||'Insert File...',top:50,width:width||950,height:height||600,zIndex:1000,recenterAuto:false,hideEffect:Element.hide,showEffect:Element.show,id:'browser_window',onClose:this.closeDialog.bind(this)});new Ajax.Updater('modal_dialog_message',url,{evalScripts:true});},closeDialog:function(window){if(!window){window=this.dialogWindow;}
+if(window){WindowUtilities._showSelect();window.close();}}};Mediabrowser=Class.create();Mediabrowser.prototype={targetElementId:null,contentsUrl:null,onInsertUrl:null,newFolderUrl:null,deleteFolderUrl:null,deleteFilesUrl:null,headerText:null,tree:null,currentNode:null,storeId:null,initialize:function(setup){this.newFolderPrompt=setup.newFolderPrompt;this.deleteFolderConfirmationMessage=setup.deleteFolderConfirmationMessage;this.deleteFileConfirmationMessage=setup.deleteFileConfirmationMessage;this.targetElementId=setup.targetElementId;this.contentsUrl=setup.contentsUrl;this.onInsertUrl=setup.onInsertUrl;this.newFolderUrl=setup.newFolderUrl;this.deleteFolderUrl=setup.deleteFolderUrl;this.deleteFilesUrl=setup.deleteFilesUrl;this.headerText=setup.headerText;},setTree:function(tree){this.tree=tree;this.currentNode=tree.getRootNode();},getTree:function(tree){return this.tree;},selectFolder:function(node,event){this.currentNode=node;this.hideFileButtons();this.activateBlock('contents');if(node.id=='root'){this.hideElement('button_delete_folder');}else{this.showElement('button_delete_folder');}
+this.updateHeader(this.currentNode);this.drawBreadcrumbs(this.currentNode);this.showElement('loading-mask');new Ajax.Request(this.contentsUrl,{parameters:{node:this.currentNode.id},evalJS:true,onSuccess:function(transport){try{this.currentNode.select();this.onAjaxSuccess(transport);this.hideElement('loading-mask');if($('contents')!=undefined){$('contents').update(transport.responseText);$$('div.filecnt').each(function(s){Event.observe(s.id,'click',this.selectFile.bind(this));Event.observe(s.id,'dblclick',this.insert.bind(this));}.bind(this));}}catch(e){alert(e.message);}}.bind(this)});},selectFolderById:function(nodeId){var node=this.tree.getNodeById(nodeId);if(node.id){this.selectFolder(node);}},selectFile:function(event){var div=Event.findElement(event,'DIV');$$('div.filecnt.selected[id!="'+div.id+'"]').each(function(e){e.removeClassName('selected');})
+div.toggleClassName('selected');if(div.hasClassName('selected')){this.showFileButtons();}else{this.hideFileButtons();}},showFileButtons:function(){this.showElement('button_delete_files');this.showElement('button_insert_files');},hideFileButtons:function(){this.hideElement('button_delete_files');this.hideElement('button_insert_files');},handleUploadComplete:function(files){$$('div[class*="file-row complete"]').each(function(e){$(e.id).remove();});this.selectFolder(this.currentNode);},insert:function(event){var div;if(event!=undefined){div=Event.findElement(event,'DIV');}else{$$('div.selected').each(function(e){div=$(e.id);});}
+if($(div.id)==undefined){return false;}
+var targetEl=this.getTargetElement();if(!targetEl){alert("Target element not found for content update");Windows.close('browser_window');return;}
+var params={filename:div.id,node:this.currentNode.id,store:this.storeId};if(targetEl.tagName.toLowerCase()=='textarea'){params.as_is=1;}
+new Ajax.Request(this.onInsertUrl,{parameters:params,onSuccess:function(transport){try{this.onAjaxSuccess(transport);if(this.getMediaBrowserOpener()){self.blur();}
+Windows.close('browser_window');if(targetEl.tagName.toLowerCase()=='input'){targetEl.value=transport.responseText;}else{updateElementAtCursor(targetEl,transport.responseText);if(varienGlobalEvents){varienGlobalEvents.fireEvent('tinymceChange');}}}catch(e){alert(e.message);}}.bind(this)});},getTargetElement:function(){if(typeof(tinyMCE)!='undefined'&&tinyMCE.get(this.targetElementId)){if((opener=this.getMediaBrowserOpener())){var targetElementId=tinyMceEditors.get(this.targetElementId).getMediaBrowserTargetElementId();return opener.document.getElementById(targetElementId);}else{return null;}}else{return document.getElementById(this.targetElementId);}},getMediaBrowserOpener:function(){if(typeof(tinyMCE)!='undefined'&&tinyMCE.get(this.targetElementId)&&typeof(tinyMceEditors)!='undefined'&&!tinyMceEditors.get(this.targetElementId).getMediaBrowserOpener().closed){return tinyMceEditors.get(this.targetElementId).getMediaBrowserOpener();}else{return null;}},newFolder:function(){var folderName=prompt(this.newFolderPrompt);if(!folderName){return false;}
+new Ajax.Request(this.newFolderUrl,{parameters:{name:folderName},onSuccess:function(transport){try{this.onAjaxSuccess(transport);if(transport.responseText.isJSON()){var response=transport.responseText.evalJSON()
+var newNode=new Ext.tree.AsyncTreeNode({text:response.short_name,draggable:false,id:response.id,expanded:true});var child=this.currentNode.appendChild(newNode);this.tree.expandPath(child.getPath(),'',function(success,node){this.selectFolder(node);}.bind(this));}}catch(e){alert(e.message);}}.bind(this)})},deleteFolder:function(){if(!confirm(this.deleteFolderConfirmationMessage)){return false;}
+new Ajax.Request(this.deleteFolderUrl,{onSuccess:function(transport){try{this.onAjaxSuccess(transport);var parent=this.currentNode.parentNode;parent.removeChild(this.currentNode);this.selectFolder(parent);}
+catch(e){alert(e.message);}}.bind(this)})},deleteFiles:function(){if(!confirm(this.deleteFileConfirmationMessage)){return false;}
+var ids=[];var i=0;$$('div.selected').each(function(e){ids[i]=e.id;i++;});new Ajax.Request(this.deleteFilesUrl,{parameters:{files:ids.toJSON()},onSuccess:function(transport){try{this.onAjaxSuccess(transport);this.selectFolder(this.currentNode);}catch(e){alert(e.message);}}.bind(this)});},drawBreadcrumbs:function(node){if($('breadcrumbs')!=undefined){$('breadcrumbs').remove();}
+if(node.id=='root'){return;}
+var path=node.getPath().split('/');var breadcrumbs='';for(var i=0,length=path.length;i<length;i++){if(path[i]==''){continue;}
+var currNode=this.tree.getNodeById(path[i]);if(currNode.id){breadcrumbs+='<li>';breadcrumbs+='<a href="#" onclick="MediabrowserInstance.selectFolderById(\''+currNode.id+'\');">'+currNode.text+'</a>';if(i<(length-1)){breadcrumbs+=' <span>/</span>';}
+breadcrumbs+='</li>';}}
+if(breadcrumbs!=''){breadcrumbs='<ul class="breadcrumbs" id="breadcrumbs">'+breadcrumbs+'</ul>';$('content_header').insert({after:breadcrumbs});}},updateHeader:function(node){var header=(node.id=='root'?this.headerText:node.text);if($('content_header_text')!=undefined){$('content_header_text').innerHTML=header;}},activateBlock:function(id){this.showElement(id);},hideElement:function(id){if($(id)!=undefined){$(id).addClassName('no-display');$(id).hide();}},showElement:function(id){if($(id)!=undefined){$(id).removeClassName('no-display');$(id).show();}},onAjaxSuccess:function(transport){if(transport.responseText.isJSON()){var response=transport.responseText.evalJSON()
+if(response.error){throw response;}else if(response.ajaxExpired&&response.ajaxRedirect){setLocation(response.ajaxRedirect);}}}}

@@ -1,0 +1,4 @@
+<?php $verificationCode = Mage::getStoreConfig('google/webmaster_tools/verification_code'); ?>
+<?php if ($verificationCode): ?>
+	<meta name="google-site-verification" content="<?php echo $this->htmlEscape($verificationCode); ?>" />
+<?php endif; ?>

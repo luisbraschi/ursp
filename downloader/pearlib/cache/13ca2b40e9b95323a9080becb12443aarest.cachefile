@@ -1,0 +1,40 @@
+a:14:{s:7:"attribs";a:2:{s:5:"xmlns";s:36:"http://pear.php.net/dtd/rest.release";s:18:"xsi:schemaLocation";s:81:"http://pear.php.net/dtd/rest.release     http://pear.php.net/dtd/rest.release.xsd";}s:1:"p";a:2:{s:7:"attribs";a:1:{s:10:"xlink:href";s:61:"/Chiara_PEAR_Server_REST/p/businessdecision_interaktingslider";}s:8:"_content";s:34:"BusinessDecision_Interaktingslider";}s:1:"c";s:37:"connect.magentocommerce.com/community";s:1:"v";s:5:"1.0.6";s:2:"st";s:6:"stable";s:1:"l";s:7:"OSL 3.0";s:1:"m";s:12:"magentoadmin";s:1:"s";s:107:"This module gives you the ability to add a slideshow of CMS content on your home page for each Store Views.";s:1:"d";s:2631:"OVERVIEW English:
+=================================
+This module allows you to add ability to show a slider of CMS Slides on home page of each Store Views.
+
+CMS Slides can add/remove/edit/preview/place from admin panel with information: Name, Store View, Status, From Time, To Time, and Content.
+
+Slider can be skined. It switches images automatically or manually, with delay and effect and that can be filled up in admin.
+
+USAGE
+
+To add this CMS Slideshow on home page, you have to put this line of code in homepage cms in admin:
+----------------------------------------------------------------------
+{{block type="interaktingslider/interaktingslider" name="interaktingslider"}}
+----------------------------------------------------------------------
+
+Also, you can place this CMS Slideshow on any page of your Magento store by using in your layout.
+
+You can send a message to the developer of this extension at this address: contact.magento-fr@interakting.com
+
+OVERVIEW Français :
+=========================================
+Ajouter un carrousel de diapositives ou diaporama dans les pages de votre magasin.
+Cette extension vous donne la possibilité d’ajouter un diaporama avec des diapositives CMS dans vos différentes vues magasins. Ce diaporama est administrable en Back Office. Vous pouvez ainsi :
+- Spécifier le nombre de diapositives à afficher,
+- Choisir l’ordre d’affichage des diapositives,
+- Activer ou non l’affichage des diapositives,
+- Disposer d’un éditeur Wysiwyg pour la création de diapositive,
+- Choisir les effets de transition entre les diapositives,
+- Paramétrer la durée d’affichage des diapositives ainsi que la durée de l’effet,
+- Spécifier le type de défilement des diapositives (manuel, automatique ou les deux),
+- Changer le thème du diaporama,
+- Choisir d’ajouter le carrousel sur n’importe quelle page de votre magasin (utiliser dans votre layout)
+- Etc.
+Le tout, simplement en ajoutant le code ci-dessous dans votre bloc CMS depuis l’administration :
+----------------------------------------------------------------------
+{{block type="interaktingslider/interaktingslider" name="interaktingslider"}}
+----------------------------------------------------------------------
+Le développement de cette extension a été réalisé par la société Business & Decision dans le cadre de ses projets, notamment Opus Focus (Litto Color).
+Nous sommes dans l’attente de vos éventuelles suggestions afin de faire évoluer cette extension.
+Vous pouvez contacter ainsi le responsable du développement de cette extension à l’adresse suivante : contact.magento-fr@interakting.com";s:2:"da";s:19:"2010-06-29 09:36:26";s:1:"n";s:6:"Stable";s:1:"f";s:5:"64896";s:1:"g";s:89:"http://connect.magentocommerce.com/community/get/BusinessDecision_Interaktingslider-1.0.6";s:1:"x";a:1:{s:7:"attribs";a:1:{s:10:"xlink:href";s:17:"package.1.0.6.xml";}}}

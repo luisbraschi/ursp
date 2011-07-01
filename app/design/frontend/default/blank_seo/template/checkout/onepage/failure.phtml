@@ -1,0 +1,31 @@
+<?php
+/**
+ * Octagono Ecommerce
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the EULA
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://www.octagonoecommerce.com.br/eula-licenca-usuario-final.html
+ *
+ *
+ * @category   Cielo
+ * @package    Octagono_Cielo
+ * @copyright  Copyright (c) 2009-2011 - Octagono Ecommerce - www.octagonoecommerce.com.br
+ * @license    http://www.octagonoecommerce.com.br/eula-licenca-usuario-final.html
+ */
+ ?>
+<div class="page-title">
+    <h2><?php echo $this->__('An error occurred in the process of payment') ?></h2>
+</div>
+<?php if ($this->getRealOrderId()) : ?><p><?php echo $this->__('Order #') . $this->getRealOrderId() ?></p><?php endif ?>
+<?php if ($error = $this->getErrorMessage()) : ?><p><?php echo $error ?></p><?php endif ?>
+<p><?php echo $this->__('Please <a href="%s">continue shopping</a>.', $this->getContinueShoppingUrl()) ?></p>
+
+<?php
+	$orderId = Mage::getSingleton('checkout/session')->getLastOrderId();
+	$order = Mage::getModel('sales/order')->load($orderId);
+	echo $this->helper('payment')->getInfoBlock($order->getPayment())->toHtml()
+?>
+

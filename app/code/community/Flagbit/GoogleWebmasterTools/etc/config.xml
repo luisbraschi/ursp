@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<modules>
+		<Flagbit_GoogleWebmasterTools>
+			<active>true</active>
+			<codePool>community</codePool>
+			<version>1.0.4</version>
+		</Flagbit_GoogleWebmasterTools>
+	</modules>
+	
+	<frontend>
+		<layout>
+			<updates>
+				<flagbit_googlewebmastertools>
+					<file>googlewebmastertools.xml</file>
+				</flagbit_googlewebmastertools>
+			</updates>
+		</layout>
+	</frontend> 
+</config>
